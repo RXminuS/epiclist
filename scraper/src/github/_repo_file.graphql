@@ -1,0 +1,25 @@
+query RepoFileWithHistory($owner: String!, $name: String!, $filename: String!, $ref_filename: String!) {
+  repository(owner: $owner, name: $name) {
+    file: object(expression: $ref_filename) {
+      ... on Blob {
+        text
+      }
+      __typename
+    }
+    history: object(expression: "HEAD"){
+      __typename
+      ... on Commit {
+        abbreviatedOid
+        blame(path: $filename) {
+          ranges{
+            startingLine
+            endingLine
+            commit{
+              committedDate
+            }
+          }
+        }
+      }
+    }
+  }
+}

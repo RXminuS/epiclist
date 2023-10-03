@@ -1,0 +1,105 @@
+fragment IssueDetails on Issue {
+  title
+  participants {
+    totalCount
+  }
+  comments {
+    totalCount
+  }
+  createdAt
+}
+
+query RepoView($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    homepageUrl
+    description
+    stargazerCount
+    openIssues: issues(states: OPEN, first: 10, orderBy: {field: CREATED_AT, direction: DESC}) {
+      totalCount
+      edges {
+        node {
+          ...IssueDetails
+        }
+      }
+    }
+    closedIssues: issues(states: CLOSED, first: 10, orderBy: {field: CREATED_AT, direction: DESC}) {
+      totalCount
+      edges {
+        node {
+          ...IssueDetails
+          closedAt
+        }
+      }
+    }
+    rootFiles: object(expression: "HEAD:") {
+      __typename
+      ... on Tree {
+        entries {
+          name
+          size
+        }
+      }
+    }
+    defaultBranchRef {
+      name
+      target {
+        __typename
+        ... on Commit {
+          history(first: 10) {
+            totalCount
+            edges {
+              node {
+                id
+                message
+                additions
+                deletions
+                committedDate
+              }
+            }
+          }
+        }
+      }
+      # target {
+      #   __typename
+      #   ... on Commit {
+      #     fullHistory: history {
+      #       totalCount
+      #     },
+      #     recentHistory: history(first: 10) {
+      #       edges {
+      #         node {
+      #           __typename
+      #           ... on Commit {
+      #             additions
+      #             deletions
+      #             committedDate
+      #           }
+      #         }
+      #       }
+      #     }
+      #   }
+      # }
+    }
+  }
+
+  #   stargazers {
+  #     totalCount
+  #   }
+  #   issues(first: 20, states: OPEN) {
+  #     nodes {
+  #       title
+  #       comments {
+  #         totalCount
+  #       }
+  #     }
+  #   }
+  #   pullRequests(first: 20, states: OPEN) {
+  #     nodes {
+  #       title
+  #       commits {
+  #         totalCount
+  #       }
+  #     }
+  #   }
+  # }
+}
