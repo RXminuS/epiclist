@@ -6,7 +6,7 @@ use graphql_client::GraphQLQuery;
 #[graphql(
     schema_path = "../schemas/github.graphql",
     query_path = "src/github/_repo_view.graphql",
-    response_derives = "Debug"
+    response_derives = "Debug,Serialize,Deserialize,Clone"
 )]
 pub struct RepoView;
 

@@ -7,7 +7,7 @@ use std::borrow::Cow;
 #[graphql(
     schema_path = "../schemas/github.graphql",
     query_path = "src/github/_repo_file.graphql",
-    response_derives = "Debug"
+    response_derives = "Debug,Serialize,Deserialize,Clone"
 )]
 pub struct RepoFileWithHistory;
 
