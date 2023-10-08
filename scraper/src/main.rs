@@ -24,7 +24,7 @@ use parser::Annotation;
 use serde::{Deserialize, Serialize};
 
 fn main() -> Result<()> {
-    let MAX_REPOS = 5;
+    let MAX_REPOS = 100;
     let output_path = std::path::Path::new("data/scrape");
     let cache_path = output_path.join("cache");
     fs::create_dir_all(&cache_path)?;
