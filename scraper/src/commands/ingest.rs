@@ -11,11 +11,6 @@ use super::crawl::CrawledAwesomeList;
 #[derive(Debug, Args)]
 pub struct IngestArgs {}
 
-struct InsertedRes {
-    id: i64,
-    updated_at: chrono::NaiveDateTime,
-}
-
 impl IngestArgs {
     pub async fn run(&self) -> Result<()> {
         let input_path = std::path::Path::new("data/scrape/awesome_lists");
@@ -45,33 +40,19 @@ impl IngestArgs {
                     DO UPDATE SET id = awesome_projects.id RETURNING id
                 ),
                 awesome_list AS (
-                    INSERT INTO awesome_lists (project_id, updated_at)
-                    SELECT id, NOW()
+                    INSERT INTO awesome_lists (project_id, crawled_at, latest_commit_at)
+                    SELECT id, $2, $3
                     FROM project ON CONFLICT (project_id)
-                    DO UPDATE SET updated_at = NOW() RETURNING id
+                    DO UPDATE SET crawled_at = $2, latest_commit_at = $3 RETURNING id
                 )
                 SELECT * FROM awesome_list LIMIT 1;
                 ",
                 f!("https://github.com/{crawled_awesome_list.owner}/{crawled_awesome_list.repo}"),
+                crawled_awesome_list.crawled_at,
+                crawled_awesome_list.latest_commit_at
             )
             .fetch_one(&pool)
             .await?;
-
-            //             DELETE FROM awesome_projects;
-
-            // WITH project AS (
-            // 	INSERT INTO awesome_projects (url)
-            // 		VALUES('$3') ON CONFLICT (url)
-            // 		DO UPDATE SET
-            // 			id = awesome_projects.id
-            // 		RETURNING
-            // 			id
-            // ), awesome_list AS (
-            // 	INSERT INTO awesome_lists (project_id, updated_at)
-            // 	SELECT id, NOW() FROM project
-            // 	RETURNING id
-            // )
-            // SELECT * FROM awesome_list LIMIT 1;
         }
 
         Ok(())
