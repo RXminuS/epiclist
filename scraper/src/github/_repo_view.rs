@@ -17,8 +17,6 @@ impl repo_view::RepoViewRepositoryRootFiles {
             _ => unreachable!("root files should be a tree"),
         };
 
-        dbg!(&tree);
-
         Ok(tree
             .entries
             .as_ref()

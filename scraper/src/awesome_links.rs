@@ -118,6 +118,7 @@ pub fn extract_awesome_links(md: &str) -> Result<Vec<AwesomeLink>> {
         });
     }
 
+    awesome_links.sort_by_cached_key(|f| f.source_lines.start);
     Ok(awesome_links)
 }
 

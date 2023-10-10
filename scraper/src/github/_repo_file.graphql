@@ -9,6 +9,7 @@ query RepoFileWithHistory($owner: String!, $name: String!, $filename: String!, $
     history: object(expression: "HEAD"){
       __typename
       ... on Commit {
+        committedDate
         abbreviatedOid
         blame(path: $filename) {
           ranges{

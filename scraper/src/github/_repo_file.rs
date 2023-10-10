@@ -30,4 +30,20 @@ impl repo_file_with_history::ResponseData {
 
         Ok(Cow::Borrowed(blob))
     }
+
+    pub fn latest_commit_date(&self) -> Result<&chrono::DateTime<chrono::Utc>> {
+        match self
+            .repository
+            .as_ref()
+            .context("missing file repository")?
+            .history
+            .as_ref()
+            .context("missing file history")?
+        {
+            repo_file_with_history::RepoFileWithHistoryRepositoryHistory::Commit(commit) => {
+                Ok(&commit.committed_date)
+            }
+            _ => unreachable!(),
+        }
+    }
 }

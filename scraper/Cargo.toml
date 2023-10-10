@@ -7,11 +7,14 @@ edition = "2021"
 [dependencies]
 range_ops = { path = "../libs/range_ops" }
 anyhow = "1.0.75"
-chrono = { version = "0.4.31", features = ["serde"] }
+chrono = { version = "0.4.23", features = [
+  "std",
+  "serde"
+], default-features = false }
 dotenv = "0.15.0"
 enum-as-inner = "0.6.0"
 fstrings = "0.2.3"
-graphql_client = { version = "0.13.0", features = ["reqwest-blocking"] }
+graphql_client = { version = "0.13.0", features = ["reqwest"] }
 reqwest = "0.11.20"
 serde = "1.0.188"
 pulldown-cmark = { version = "0.9.3", default-features = false, features = [
@@ -37,6 +40,18 @@ intervallum = "1.4.0"
 smallvec = { version = "1.11.1", features = ["serde"] }
 serde_json = "1.0.107"
 sled = "0.34.7"
+clap = { version = "4.4.6", features = ["derive"] }
+tokio = { version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
+fs4 = { version = "0.7.0", features = ["sync", "tokio"] }
+uuid = "1.4.1"
+sqlx = { version = "0.7", features = [
+  "runtime-tokio",
+  "chrono",
+  "bigdecimal",
+  "json",
+  "macros",
+  "postgres"
+] }
 
 [dev-dependencies]
 insta = "1.33.0"

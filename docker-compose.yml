@@ -1,0 +1,18 @@
+version: "3.7"
+services:
+  common_db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      # - POSTGRES_MULTIPLE_DATABASES=db1,db2
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    # volumes:
+    # - ./schemas/db.sql:/docker-entrypoint-initdb.d/create_tables.sql
+    # - ./schemas/db.sql:/docker-entrypoint-initdb.d/db.sql
+    ports:
+      - 5432:5432
