@@ -1,9 +1,10 @@
 use crate::awesome_links::{extract_awesome_links, AwesomeLink};
 use crate::github;
 
-use std::collections::BTreeSet;
-use std::collections::HashMap;
+use kdam::{term, term::Colorizer, tqdm, BarExt, Column, RichProgress, Spinner};
 use std::collections::HashSet;
+use std::collections::{vec_deque, BTreeSet};
+use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::path::PathBuf;
 use std::{fs, io::Write, path::Path};
@@ -14,15 +15,21 @@ use clap::{builder::NonEmptyStringValueParser, Arg, ArgMatches, Command};
 use fs4::FileExt;
 use itertools::Itertools;
 use reqwest::Client;
-
 use tokio::sync::RwLock;
 
-use dotenv::dotenv;
 use graphql_client::reqwest::post_graphql;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Args)]
-pub struct CrawlArgs {}
+pub struct CrawlArgs {
+    output_path: PathBuf,
+
+    #[clap(long)]
+    max_repos: Option<usize>,
+
+    #[clap(long, env)]
+    github_token: String,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CrawledRepoData {
@@ -43,38 +50,49 @@ pub struct CrawledAwesomeList {
 
 impl CrawlArgs {
     pub async fn run(&self) -> Result<()> {
-        let MAX_REPOS = 20;
-        let output_path = std::path::Path::new("data/scrape");
-        let cache_path = output_path.join("cache");
+        let cache_path = self.output_path.join("cache");
 
         fs::create_dir_all(&cache_path)?;
-        let md_path = output_path.join("mds");
+        let md_path = self.output_path.join("mds");
         fs::create_dir_all(&md_path)?;
-        let awesome_lists_path = output_path.join("awesome_lists");
+        let awesome_lists_path = self.output_path.join("awesome_lists");
         fs::create_dir_all(&awesome_lists_path)?;
-
-        //TODO: Move this all to clap
-        dotenv().ok();
-        let github_api_token = std::env::var("GITHUB_TOKEN").expect("missing GITHUB_TOKEN");
 
         let client = Client::builder()
             .user_agent("graphql-rust/0.9.0")
             .default_headers(
                 std::iter::once((
                     reqwest::header::AUTHORIZATION,
-                    reqwest::header::HeaderValue::from_str(&format!("Bearer {}", github_api_token))
-                        .unwrap(),
+                    reqwest::header::HeaderValue::from_str(&format!(
+                        "Bearer {}",
+                        &self.github_token
+                    ))
+                    .unwrap(),
                 ))
                 .collect(),
             )
             .build()?;
+        let mut to_scrape =
+            VecDeque::from([(String::from("sindresorhus"), String::from("awesome"), true)]);
 
-        let mut to_scrape = vec![(String::from("sindresorhus"), String::from("awesome"), true)];
         let mut processed = HashSet::<String>::new();
 
         //TODO: add caching and re-fetching
-        while let Some((owner, repo, follow_links)) = to_scrape.pop() {
-            let repo_data = fetch_with_cache(&owner, &repo, &client, &cache_path).await?;
+        let mut pb = tqdm!();
+        pb.write("Fetching awesome lists...".colorize("bold blue"))?;
+        while let Some((owner, repo, follow_links)) = to_scrape.pop_front() {
+            pb.update(1)?;
+            let repo_data = match fetch_with_cache(&owner, &repo, &client, &cache_path).await {
+                Ok(data) => data,
+                Err(e) => {
+                    pb.write(format!(
+                        "{}: {}",
+                        f!("{owner}/{repo}").colorize("bold red"),
+                        e
+                    ))?;
+                    continue;
+                }
+            };
             let readme_content = repo_data.readme.file_content()?;
             let links = extract_awesome_links(&readme_content)?;
 
@@ -115,8 +133,8 @@ impl CrawlArgs {
                         };
                         !exists
                     });
-                if MAX_REPOS > 0 {
-                    to_scrape.extend(to_add.take(MAX_REPOS))
+                if self.max_repos.unwrap_or_default() > 0 {
+                    to_scrape.extend(to_add.take(self.max_repos.unwrap_or_default()))
                 } else {
                     to_scrape.extend(to_add)
                 }
@@ -167,9 +185,7 @@ async fn fetch_with_cache(
         .root_files
         .as_ref()
         .context("missing root files")?;
-    let readme_path = root_files
-        .find_readme_path()?
-        .context("no root readme found")?;
+    let readme_path = root_files.find_readme_path()?.context("no root readme")?;
 
     let readme_data: github::repo_file_with_history::ResponseData =
         post_graphql::<github::RepoFileWithHistory, _>(

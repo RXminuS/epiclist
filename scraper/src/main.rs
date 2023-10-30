@@ -6,6 +6,9 @@ extern crate fstrings;
 #[macro_use]
 extern crate derive_builder;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod awesome_links;
 mod commands;
 mod github;
@@ -13,6 +16,7 @@ mod parser;
 
 use anyhow::Result;
 use clap::Parser;
+use dotenv::dotenv;
 
 #[derive(Debug, Parser)]
 #[command(propagate_version = true)]
@@ -24,11 +28,13 @@ struct EpiclistScraperApp {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv()?;
     let app = EpiclistScraperApp::parse();
 
     match app.command {
         commands::Command::Crawl(cmd) => cmd.run().await?,
         commands::Command::Ingest(cmd) => cmd.run().await?,
+        commands::Command::Lance(cmd) => cmd.run().await?,
     };
 
     Ok(())

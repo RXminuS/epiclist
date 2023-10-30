@@ -49,7 +49,11 @@ pub fn extract_awesome_links(md: &str) -> Result<Vec<AwesomeLink>> {
     let (text, anns) = parser::parse_md(&md)?;
     let anns_idx = parser::AnnotationTree::new(&anns);
 
-    let links_anns = anns.iter().filter(|a| a.as_link().is_some()).collect_vec();
+    let links_anns = anns
+        .iter()
+        .filter(|a| a.as_link().is_some())
+        .sorted_by_key(|v| v.as_range().start)
+        .collect_vec();
     let mut awesome_links = Vec::<AwesomeLink>::with_capacity(links_anns.len());
 
     for ann in links_anns.iter() {
@@ -118,7 +122,6 @@ pub fn extract_awesome_links(md: &str) -> Result<Vec<AwesomeLink>> {
         });
     }
 
-    awesome_links.sort_by_cached_key(|f| f.source_lines.start);
     Ok(awesome_links)
 }
 

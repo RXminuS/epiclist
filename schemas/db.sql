@@ -1,9 +1,6 @@
-DROP TABLE IF EXISTS awesome_projects CASCADE;
-
-DROP TABLE IF EXISTS awesome_lists CASCADE;
-
-DROP TABLE IF EXISTS awesome_links CASCADE;
-
+-- DROP TABLE IF EXISTS awesome_projects CASCADE;
+-- DROP TABLE IF EXISTS awesome_lists CASCADE;
+-- DROP TABLE IF EXISTS awesome_links CASCADE;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
@@ -76,25 +73,19 @@ END
 $$
 LANGUAGE plpgsql;
 
-CREATE TABLE IF NOT EXISTS awesome_projects(
-  id uuid PRIMARY KEY DEFAULT _uuid_generate_v7(),
-  url text NOT NULL,
-  UNIQUE (url)
-);
-
 CREATE TABLE IF NOT EXISTS awesome_lists(
   id uuid PRIMARY KEY DEFAULT _uuid_generate_v7(),
-  project_id uuid NOT NULL REFERENCES awesome_projects(id) ON DELETE CASCADE,
+  url text NOT NULL,
   latest_commit_at timestamp with time zone NOT NULL,
   crawled_at timestamp with time zone NOT NULL,
-  UNIQUE (project_id)
+  UNIQUE (url)
 );
 
 CREATE TABLE IF NOT EXISTS awesome_links(
   id uuid PRIMARY KEY DEFAULT _uuid_generate_v7(),
   awesome_list_id uuid NOT NULL REFERENCES awesome_lists(id),
-  project_id uuid NOT NULL REFERENCES awesome_projects(id) ON DELETE CASCADE,
+  url text NOT NULL,
   title text,
   description text,
-  UNIQUE (awesome_list_id, project_id),
-  CHECK (awesome_list_id != project_id))
+  breadcrumbs text ARRAY NOT NULL,
+  UNIQUE (awesome_list_id, url))
